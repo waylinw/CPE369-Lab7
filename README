@@ -1,0 +1,5 @@
+javac -cp json-mapreduce-1.0.jar:hadoop-core-1.2.1.jar:org.json-20120521.jar histogram.java
+
+jar -cvf histogram.jar histogram*.class
+
+hadoop jar histogram.jar histogram -libjars /home/wwang16/Lab7/json-mapreduce-1.0.jar,/home/wwang16/Lab7/org.json-20120521.jar Lab7/beFuddled.txt Lab7/1
