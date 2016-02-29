@@ -27,37 +27,86 @@ import com.alexholmes.json.mapreduce.MultiLineJsonInputFormat;
 public class summaries extends Configured implements Tool {
 
     public static class JsonMapper
-            extends Mapper<LongWritable, Text, Text, IntWritable> {
-
-        private Text        outputKey   = new Text();
-        private IntWritable outputValue = new IntWritable(1);
+            extends Mapper<LongWritable, Text, IntWritable, Text> {
 
         @Override
         public void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException {
+           try {
+              JSONObject json = new JSONObject(value.toString());
+              context.write(new IntWritable(json.getInt("game")), 
+                            value);
+           } catch (Exception e) {
+              System.out.println(e);
+           }
         }
     }
 
     public static class JsonReducer
-            extends Reducer<Text, IntWritable, Text, IntWritable> {
-        private IntWritable result = new IntWritable();
+            extends Reducer<IntWritable, Text, Text, Text> {
 
         @Override
-        public void reduce(Text key, Iterable<IntWritable> values, Context context)
-                throws IOException, InterruptedException {
+        public void reduce(IntWritable key, Iterable<Text> values, 
+         Context context) throws IOException, InterruptedException {
+
+           int finalMove = 1;
+           int finalScore = 0;
+           int moves = 0;
+           int regular = 0;
+           int special = 0;
+           String outcome = "in progress";
+           String actionType = "";
+           String userId = "";
+
+           JSONObject json = new JSONObject();
+           JSONObject action = new JSONObject();
+
+           for (Text val : values) {
+               json = new JSONObject(val.toString());
+               action = json.getJSONObject("action");
+               actionType = action.getString("actionType");
+
+               moves++;
+
+               if (actionType.equals("Move")) {
+                  regular++;
+               } else if (actionType.equals("SpecialMove")) {
+                  special++;
+               } else if (actionType.equals("GameEnd")) {
+                  outcome = action.getString("gameStatus");
+               }
+
+               if (action.getInt("actionNumber") > finalMove) {
+                  finalMove = action.getInt("actionNumber");
+                  finalScore = action.getInt("points");
+               }
+           }
+
+           userId = json.getString("user");
+
+           json = new JSONObject()
+                 .put("user", userId)
+                 .put("moves", moves)
+                 .put("regular", regular)
+                 .put("special", special)
+                 .put("outcome", outcome)
+                 .put("score", finalScore)
+                 .put("perMove", (double)finalScore/moves);
+
+           context.write(new Text(""), new Text(json.toString(1)));
         }
     }
 
     @Override
     public int run(String[] args) throws Exception {
         Configuration conf = super.getConf();
-        Job job = Job.getInstance(conf, "wwang16-lab7-2");
+        Job job = Job.getInstance(conf, "mjzhao-lab7-2");
 
-        job.setJarByClass(histogram.class);
+        job.setJarByClass(summaries.class);
         job.setMapperClass(JsonMapper.class);
         job.setReducerClass(JsonReducer.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
+        job.setOutputKeyClass(IntWritable.class);
+        job.setOutputValueClass(Text.class);
         job.setInputFormatClass(MultiLineJsonInputFormat.class);
         MultiLineJsonInputFormat.setInputJsonMember(job, "game");
 
@@ -69,7 +118,7 @@ public class summaries extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        int res = ToolRunner.run(conf, new histogram(), args);
+        int res = ToolRunner.run(conf, new summaries(), args);
         System.exit(res);
     }
 }
