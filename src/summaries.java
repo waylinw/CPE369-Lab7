@@ -74,7 +74,7 @@ public class summaries extends Configured implements Tool {
                } else if (actionType.equals("SpecialMove")) {
                   special++;
                } else if (actionType.equals("GameEnd")) {
-                  outcome = action.getString("gameStatus");
+                  outcome = action.getString("gameStatus").toLowerCase();
                }
 
                if (action.getInt("actionNumber") > finalMove) {
