@@ -81,8 +81,13 @@ public class histogram extends Configured implements Tool {
     }
 
     public static void main(String[] args) throws Exception {
+        long startTime = System.currentTimeMillis();
         Configuration conf = new Configuration();
         int res = ToolRunner.run(conf, new histogram(), args);
+        long endTime = System.currentTimeMillis();
+        long timeDiff = endTime - startTime;
+
+        System.out.println("Time taken: " + timeDiff+ " ms.");
         System.exit(res);
     }
 }
