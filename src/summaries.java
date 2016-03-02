@@ -5,6 +5,7 @@
 
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -42,7 +43,7 @@ public class summaries extends Configured implements Tool {
     }
 
     public static class JsonReducer
-            extends Reducer<IntWritable, Text, Text, Text> {
+            extends Reducer<IntWritable, Text, IntWritable, Text> {
 
         @Override
         public void reduce(IntWritable key, Iterable<Text> values, 
@@ -53,6 +54,7 @@ public class summaries extends Configured implements Tool {
            int moves = 0;
            int regular = 0;
            int special = 0;
+           int game = 0;
            String outcome = "in progress";
            String actionType = "";
            String userId = "";
@@ -82,6 +84,7 @@ public class summaries extends Configured implements Tool {
            }
 
            userId = json.getString("user");
+           game = json.getInt("game");
 
            json = new JSONObject()
                  .put("user", userId)
@@ -92,7 +95,7 @@ public class summaries extends Configured implements Tool {
                  .put("score", finalScore)
                  .put("perMove", (double)finalScore/moves);
 
-           context.write(new Text(""), new Text(json.toString(1)));
+           context.write(new IntWritable(game), new Text(json.toString(1)));
         }
     }
 
