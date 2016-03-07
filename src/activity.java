@@ -59,34 +59,39 @@ public class activity extends Configured implements Tool {
 
            JSONObject json = new JSONObject();
            JSONObject action = new JSONObject();
+            try {
 
-           for (Text val : values) {
-               json = new JSONObject(val.toString());
-               action = json.getJSONObject("action");
-               actionType = action.getString("actionType");
-    
-               moves++;
+                for (Text val : values) {
+                    json = new JSONObject(val.toString());
+                    action = json.getJSONObject("action");
+                    actionType = action.getString("actionType");
 
-               if (action.getInt("actionNumber") > finalMove) {
-                  finalMove = action.getInt("actionNumber");
-                  finalScore = action.getInt("points");
-               }
+                    moves++;
 
-               if (actionType.equals("GameEnd")) {
-                  outcome = action.getString("gameStatus");
-               }
-           }
+                    if (action.getInt("actionNumber") > finalMove) {
+                        finalMove = action.getInt("actionNumber");
+                        finalScore = action.getInt("points");
+                    }
 
-           userId = json.getString("user");
-           game = json.getInt("game");
+                    if (actionType.equals("GameEnd")) {
+                        outcome = action.getString("gameStatus");
+                    }
+                }
 
-           json = new JSONObject()
-                 .put("user", userId)
-                 .put("moves", moves)
-                 .put("outcome", outcome)
-                 .put("score", finalScore);
+                userId = json.getString("user");
+                game = json.getInt("game");
 
-           context.write(new IntWritable(game), new Text(json.toString(1)));
+                json = new JSONObject()
+                        .put("user", userId)
+                        .put("moves", moves)
+                        .put("outcome", outcome)
+                        .put("score", finalScore);
+
+                context.write(new IntWritable(game), new Text(json.toString(1)));
+            }
+            catch (Exception e) {
+
+            }
         }
     }
 
@@ -122,45 +127,50 @@ public class activity extends Configured implements Tool {
            int highScore = Integer.MIN_VALUE;
            int moves = 0;
            int longestGame = 0;
+            try {
 
-           for (Text val : values) {
-               json = new JSONObject(val.toString());
-               outcome = json.getString("outcome");
-               score = json.getInt("score");
-               moves = json.getInt("moves");
+                for (Text val : values) {
+                    json = new JSONObject(val.toString());
+                    outcome = json.getString("outcome");
+                    score = json.getInt("score");
+                    moves = json.getInt("moves");
 
-               games++;
+                    games++;
 
-               if (outcome.equals("Loss")) {
-                  lost++;
-               } else if (outcome.equals("Win")) {
-                  won++;
-               }
+                    if (outcome.equals("Loss")) {
+                        lost++;
+                    } else if (outcome.equals("Win")) {
+                        won++;
+                    }
 
-               if (!outcome.equals("in progress")) {
-                  if (score > highScore) {
-                     highScore = score;
-                  }
-                  if (moves > longestGame) {
-                     longestGame = moves;
-                  }
-               }
-           }
+                    if (!outcome.equals("in progress")) {
+                        if (score > highScore) {
+                            highScore = score;
+                        }
+                        if (moves > longestGame) {
+                            longestGame = moves;
+                        }
+                    }
+                }
 
-           userId = json.getString("user");
+                userId = json.getString("user");
 
-           if (highScore == Integer.MIN_VALUE) {
-              highScore = 0;
-           }
+                if (highScore == Integer.MIN_VALUE) {
+                    highScore = 0;
+                }
 
-           json = new JSONObject()
-                 .put("games", games)
-                 .put("won", won)
-                 .put("lost", lost)
-                 .put("highscore", highScore)
-                 .put("longestGame", longestGame);
+                json = new JSONObject()
+                        .put("games", games)
+                        .put("won", won)
+                        .put("lost", lost)
+                        .put("highscore", highScore)
+                        .put("longestGame", longestGame);
 
-           context.write(new Text(userId), new Text(json.toString(1)));
+                context.write(new Text(userId), new Text(json.toString(1)));
+            }
+            catch (Exception e) {
+
+            }
         }
     }
 

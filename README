@@ -3,3 +3,14 @@ javac -cp json-mapreduce-1.0.jar:hadoop-core-1.2.1.jar:org.json-20120521.jar his
 jar -cvf histogram.jar histogram*.class
 
 hadoop jar histogram.jar histogram -libjars /home/wwang16/Lab7/json-mapreduce-1.0.jar,/home/wwang16/Lab7/org.json-20120521.jar Lab7/beFuddled.txt Lab7/1
+
+
+java -cp .:javax.json-1.0.2.jar beFuddledGen 1000.txt 1000
+java -cp .:org.json-20120521.jar histogramSequential 1000.txt 1.out
+
+
+hadoop fs -rm Lab7/data/7.txt
+
+hadoop fs -rm -R Lab7/1
+
+hadoop jar histogram.jar histogram -libjars /home/wwang16/Lab7/json-mapreduce-1.0.jar,/home/wwang16/Lab7/org.json-20120521.jar Lab7/data/7.txt Lab7/1
