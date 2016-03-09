@@ -27,37 +27,59 @@ import com.alexholmes.json.mapreduce.MultiLineJsonInputFormat;
 public class accounting extends Configured implements Tool {
 
     public static class JsonMapper
-            extends Mapper<LongWritable, Text, Text, IntWritable> {
-
-        private Text        outputKey   = new Text();
-        private IntWritable outputValue = new IntWritable(1);
+            extends Mapper<LongWritable, Text, Text, Text> {
 
         @Override
         public void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException {
+           JSONObject json = new JSONObject(value.toString());
+           String user = json.getString("user");
+           String message = json.getString("text");
+           long msgLen = message.length();
+
+           context.write(new Text(user), new Text(message));
+
         }
     }
 
     public static class JsonReducer
-            extends Reducer<Text, IntWritable, Text, IntWritable> {
-        private IntWritable result = new IntWritable();
+            extends Reducer<Text, Text, Text, Text> {
 
         @Override
-        public void reduce(Text key, Iterable<IntWritable> values, Context context)
-                throws IOException, InterruptedException {
+        public void reduce(Text key, Iterable<Text> values, 
+         Context context) throws IOException, InterruptedException {
+           double totalCharge = 0;
+           int totalMessages = 0;
+           double value = 0;
+
+           for (Text val : values) {
+              value = val.toString().length();
+              totalCharge += 0.05 + Math.ceil(value / 10) * 0.01;
+              totalMessages++;
+
+              if (value > 100) {
+                 totalCharge += 0.05;
+              }
+           }
+
+           if (totalMessages > 100) {
+              totalCharge = totalCharge * 0.95;
+           }
+
+           context.write(key, new Text(String.format("$%.2f", totalCharge)));
         }
     }
 
     @Override
     public int run(String[] args) throws Exception {
         Configuration conf = super.getConf();
-        Job job = Job.getInstance(conf, "wwang16-lab7-4");
+        Job job = Job.getInstance(conf, "mjzhao-lab7-5");
 
-        job.setJarByClass(histogram.class);
+        job.setJarByClass(accounting.class);
         job.setMapperClass(JsonMapper.class);
         job.setReducerClass(JsonReducer.class);
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
+        job.setOutputValueClass(Text.class);
         job.setInputFormatClass(MultiLineJsonInputFormat.class);
         MultiLineJsonInputFormat.setInputJsonMember(job, "messageID");
 
@@ -69,7 +91,7 @@ public class accounting extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        int res = ToolRunner.run(conf, new histogram(), args);
+        int res = ToolRunner.run(conf, new accounting(), args);
         System.exit(res);
     }
 }
