@@ -4,17 +4,16 @@
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.awt.geom.Point2D;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class histogramSequential {
     public static void main(String[] args) throws Exception{
         long starTime = System.currentTimeMillis();
-        HashMap<Point2D, Integer> locations = new HashMap<>();
+        TreeMap<String, Integer> locations = new TreeMap<>();
         if (args.length < 2) {
             System.out.println("Usage: java histogramSequential [Path to input file] [Path to output file]");
             System.exit(1);
@@ -34,7 +33,7 @@ public class histogramSequential {
                 JSONObject actionObject = obj.getJSONObject("action");
                 if (actionObject.has("location")) {
                     JSONObject locationObject = actionObject.getJSONObject("location");
-                    Point2D loc = new Point2D.Float(locationObject.getInt("x"), locationObject.getInt("y"));
+                    String loc = "(" + locationObject.getInt("x") +", " + locationObject.getInt("y") + ")";
                     if (locations.containsKey(loc)) {
                         locations.put(loc, locations.get(loc) + 1);
                     }
@@ -45,13 +44,13 @@ public class histogramSequential {
             }
         }
 
-        Set<Point2D> points = locations.keySet();
-        Iterator<Point2D> itr = points.iterator();
+        Set<String> points = locations.keySet();
+        Iterator<String> itr = points.iterator();
         PrintWriter file = new PrintWriter(args[1], "UTF-8");
         while(itr.hasNext()) {
-            Point2D loc = itr.next();
+            String loc = itr.next();
             int val = locations.get(loc);
-            file.println("(" + loc.getX() + ", " + loc.getY() + ")\t" + val );
+            file.println(loc + "\t" + val );
         }
 
         file.close();

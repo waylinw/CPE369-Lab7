@@ -5,8 +5,6 @@
 
 
 import java.io.IOException;
-import java.util.Iterator;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -20,6 +18,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.alexholmes.json.mapreduce.MultiLineJsonInputFormat;
@@ -47,7 +46,7 @@ public class summaries extends Configured implements Tool {
 
         @Override
         public void reduce(IntWritable key, Iterable<Text> values, 
-         Context context) throws IOException, InterruptedException {
+         Context context) throws IOException, InterruptedException{
 
            int finalMove = 1;
            int finalScore = 0;
@@ -62,40 +61,46 @@ public class summaries extends Configured implements Tool {
            JSONObject json = new JSONObject();
            JSONObject action = new JSONObject();
 
-           for (Text val : values) {
-               json = new JSONObject(val.toString());
-               action = json.getJSONObject("action");
-               actionType = action.getString("actionType");
+            try {
 
-               moves++;
+                for (Text val : values) {
+                    json = new JSONObject(val.toString());
+                    action = json.getJSONObject("action");
+                    actionType = action.getString("actionType");
 
-               if (actionType.equals("Move")) {
-                  regular++;
-               } else if (actionType.equals("SpecialMove")) {
-                  special++;
-               } else if (actionType.equals("GameEnd")) {
-                  outcome = action.getString("gameStatus").toLowerCase();
-               }
+                    moves++;
 
-               if (action.getInt("actionNumber") > finalMove) {
-                  finalMove = action.getInt("actionNumber");
-                  finalScore = action.getInt("points");
-               }
-           }
+                    if (actionType.equals("Move")) {
+                        regular++;
+                    } else if (actionType.equals("SpecialMove")) {
+                        special++;
+                    } else if (actionType.equals("GameEnd")) {
+                        outcome = action.getString("gameStatus").toLowerCase();
+                    }
 
-           userId = json.getString("user");
-           game = json.getInt("game");
+                    if (action.getInt("actionNumber") > finalMove) {
+                        finalMove = action.getInt("actionNumber");
+                        finalScore = action.getInt("points");
+                    }
+                }
 
-           json = new JSONObject()
-                 .put("user", userId)
-                 .put("moves", moves)
-                 .put("regular", regular)
-                 .put("special", special)
-                 .put("outcome", outcome)
-                 .put("score", finalScore)
-                 .put("perMove", (double)finalScore/moves);
+                userId = json.getString("user");
+                game = json.getInt("game");
 
-           context.write(new IntWritable(game), new Text(json.toString(1)));
+                json = new JSONObject()
+                        .put("user", userId)
+                        .put("moves", moves)
+                        .put("regular", regular)
+                        .put("special", special)
+                        .put("outcome", outcome)
+                        .put("score", finalScore)
+                        .put("perMove", (double) finalScore / moves);
+
+                context.write(new IntWritable(game), new Text(json.toString(1)));
+            }
+            catch (Exception e) {
+
+            }
         }
     }
 
